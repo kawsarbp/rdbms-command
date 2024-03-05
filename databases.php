@@ -18,6 +18,8 @@
 "SHOW ERRORS"; // show errors
 "SELECT @@error_count"; // show error count
 
+"SHOW INDEX FROM `products`"; // unique index check
+
 "SELECT `name`,`quantity` FROM `products`"; // select specific product
 
 "SELECT * FROM `products`"; // select all product
@@ -47,4 +49,16 @@
 "UPDATE `users` SET `name`='ashif' WHERE `id` = 4"; // update data query
 
 "DELETE FROM `users` WHERE `id` = 4"; // delete data query
+
+"SELECT `products`.`name` ,`categories`.`name`,`subcategories`.`name`,`users`.`name` 
+FROM `products` 
+JOIN `categories` ON `products`.`category_id` = `categories`.`id` 
+JOIN `subcategories` ON `products`.`subcategory_id` = `subcategories`.`id` AND `p`.`name` = 'dhaka'
+JOIN `users` ON `products`.`user_id` = `users`.`id`"; // inner join
+
+"SELECT `products`.`name` ,`categories`.`name`,`subcategories`.`name`,`users`.`name` 
+FROM `products` 
+LEFT JOIN `categories` ON `products`.`category_id` = `categories`.`id` 
+LEFT JOIN `subcategories` ON `products`.`subcategory_id` = `subcategories`.`id` 
+LEFT JOIN `users` ON `products`.`user_id` = `users`.`id`"; // left join
 
