@@ -74,6 +74,7 @@ LEFT JOIN `users` ON `products`.`user_id` = `users`.`id`"; // left join
 "SELECT COUNT(*) FROM `products`"; // count function
 "SELECT MD5(`name`) as product_name FROM `products` WHERE `id`=1"; // md5 function
 "SELECT SHA1(`name`) as product_name FROM `products` WHERE `id`=1"; // sha1 function
+"SELECT SHA2('YourTextHere', 256)"; // has2 -- The second parameter specifies the bit length of the result.
 "SELECT CONCAT(`user_id`, ' - ',`quantity`) as product_name FROM `products` WHERE `id`=1"; // concat function
 "SELECT CONCAT_WS(`user_id`, ' - ',`quantity`) as product_name FROM `products` WHERE `id`=1"; //concat ws function
 "SELECT UPPER(`name`) FROM `products`"; // upper function
@@ -115,4 +116,51 @@ FROM
 "SELECT ACOS(0.5)"; // acos function
 "SELECT ATAN(1)"; // atan function
 "SELECT ATAN2(1, 1)"; // atan2 function
+"SELECT DATE_FORMAT(CURRENT_DATE(), '%D-%M-%Y')"; // current date
+"SELECT DATE_FORMAT(CURRENT_TIME(), '%H:%i')"; // current time
+"SELECT DATE_ADD('2024-03-07', INTERVAL 1 DAY)"; // date add interval example ADD DAY ND MONTH
+"SELECT DATE_SUB('2024-03-07', INTERVAL 1 DAY)"; // date sub interval example ADD DAY ND MONTH
+"SELECT DATEDIFF(`created_at`, `updated_at`) AS difference FROM products"; // date difference
+"SELECT TIMEDIFF('2024-03-07 12:00:00', '2024-03-07 10:00:00')"; // timestamp difference
+"SELECT MAKEDATE(2024, 80)"; // makedate function
+"SELECT MAKETIME(12, 30, 45)"; // maketime function
+"SELECT id, STR_TO_DATE(`special_start`, '%Y-%m-%d') AS proper_date FROM products"; // str to date function
+"SELECT SEC_TO_TIME(5000)"; // seconds to time function
+"SELECT TIME_TO_SEC('12:30:45')"; // time to second function
+"SELECT TO_DAYS(NOW())"; // to days function
+"SELECT EXTRACT(YEAR FROM '2024-03-07')"; // extract year from
+"SELECT HOUR(`created_at`) FROM products"; // hours
+"SELECT MINUTE(`created_at`) FROM products"; // minutes
+"SELECT MONTH(`created_at`) FROM products"; // months
+"SELECT MICROSECOND(`created_at`) FROM products"; // microseconds
+"SELECT order_data,shipped_date, DATEDIFF(shipped_date,order_data) AS delay FROM products HAVING delay > 3"; // having use when data manipulates
 
+// control flow
+
+"SELECT `id`, `quantity`,
+CASE 
+    WHEN `quantity` > 25 THEN 'twentyfive up'
+    WHEN `quantity` > 15 THEN 'fifteen up'
+    ELSE 'new'
+END AS quantity_type
+FROM products"; // case else end
+
+"SELECT `quantity`,
+IF(`quantity` > 15, 'up 15', 'less 15') as quantity_type
+FROM products"; // if statement
+
+"UPDATE users
+SET card_no = AES_ENCRYPT('12-85-630', 'boss')
+WHERE id = 2;"; // ase_encryption
+//solution code for encryption
+//ALTER TABLE users MODIFY COLUMN card_no VARBINARY(255);
+"SELECT `name`,card_no, AES_DECRYPT(card_no, 'boss') AS card_no
+FROM users LIMIT 5;"; // ase_decryption
+
+"SELECT name, quantity, CRC32(CONCAT(`name`,`quantity`)) AS checksum FROM `products`"; // crc32
+
+
+"SELECT * 
+FROM products p
+LEFT JOIN products_dev pv ON pv.id = p.id
+WHERE CRC32(CONCAT(p.`name`,p.`quantity`)) != CRC32(CONCAT(pv.`name`,pv.`quantity`))"; // check which table data update
