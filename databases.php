@@ -60,7 +60,7 @@ JOIN `users` ON `products`.`user_id` = `users`.`id`"; // inner join
 FROM `products` 
 LEFT JOIN `categories` ON `products`.`category_id` = `categories`.`id` 
 LEFT JOIN `subcategories` ON `products`.`subcategory_id` = `subcategories`.`id` 
-LEFT JOIN `users` ON `products`.`user_id` = `users`.`id`"; // left join
+LEFT JOIN `users` ON `products`.`user_id` = `users`.`id`"; // left join. get left table all data and get right table match data
 
 //mysql functions
 "SELECT LENGTH(`name`) FROM `products`"; // length function
@@ -82,6 +82,7 @@ LEFT JOIN `users` ON `products`.`user_id` = `users`.`id`"; // left join
 "SELECT FORMAT(`buying_price` * 1.6, 2) FROM `products`"; // format function
 "SELECT INSTR('Hello World', 'World') AS Position"; // instr function for kind of search
 "SELECT SUBSTR('Hello World', 1, 5) AS ExtractedString"; // substr function
+"SELECT SUBSTR('Hello World', 7) AS ExtractedString"; // substr function
 "SELECT email, SUBSTRING_INDEX(email, '@', 1) AS Username FROM users"; // substring index function
 "SELECT TRIM(BOTH 'x' FROM 'xxxHello World!xxx') AS TrimmedString"; // trim function
 "SELECT LTRIM('   Hello World!') AS TrimmedString;"; // ltrim function
@@ -95,10 +96,13 @@ FROM
     example_table;"; // trim,ltrim,rtrim,both
 "SELECT RIGHT('Hello World!', 2) AS TrimmedString";// right function
 "SELECT LEFT('Hello World!', 2) AS TrimmedString";// left function
+"SELECT LEFT(`email`, INSTR(`email`,'@')-1) AS TrimmedString FROM users"; //left function for find email of username
 "SELECT LPAD(user_id, 8, '0') AS PaddedProductCode FROM products"; // lpad function
 "SELECT RPAD(user_id, 8, 0) AS PaddedProductCode FROM products"; // rpad function
 "SELECT LOWER(REPLACE(name, ' ', '-')) AS modified_description FROM products"; // replace function
+"SELECT `id`,`email`, INSTR(`email`,'@') as posision_count FROM users"; // instr function for searching @ position
 "SELECT `id`,`name`, SUBSTRING(`email`, INSTR(`email`,'@')+1) as email_domain FROM users";// substring and instr function
+"SELECT `id`,`name`, SUBSTRING(`email`, 1, INSTR(`email`,'@')-1) as email_domain FROM users";
 "SELECT ROUND(3.745, 2)"; // round function
 "SELECT FLOOR(5.7)"; // floor function
 "SELECT TRUNCATE(3.745, 2)"; // truncate function
@@ -151,16 +155,82 @@ FROM products"; // if statement
 
 "UPDATE users
 SET card_no = AES_ENCRYPT('12-85-630', 'boss')
-WHERE id = 2;"; // ase_encryption
-//solution code for encryption
+WHERE id = 2;"; // ase_encryption solution code for encryption
 //ALTER TABLE users MODIFY COLUMN card_no VARBINARY(255);
 "SELECT `name`,card_no, AES_DECRYPT(card_no, 'boss') AS card_no
 FROM users LIMIT 5;"; // ase_decryption
 
 "SELECT name, quantity, CRC32(CONCAT(`name`,`quantity`)) AS checksum FROM `products`"; // crc32
 
-
 "SELECT * 
 FROM products p
 LEFT JOIN products_dev pv ON pv.id = p.id
-WHERE CRC32(CONCAT(p.`name`,p.`quantity`)) != CRC32(CONCAT(pv.`name`,pv.`quantity`))"; // check which table data update
+WHERE CRC32(CONCAT(p.`name`,p.`quantity`)) != CRC32(CONCAT(pv.`name`,pv.`quantity`))"; // check which table data update with join
+
+
+"SELECT p.product_title AS a, s.subcategory_name AS b, b.brand_name AS c
+FROM products p
+INNER JOIN subcategories s ON p.subcategory_id = s.id
+INNER JOIN brands b ON p.brand_id = b.id"; // inner join with aliases
+
+"SELECT p.product_title AS a, s.subcategory_name AS b, b.brand_name AS c , c.category_name as d
+FROM products p
+INNER JOIN subcategories s ON p.subcategory_id = s.id
+INNER JOIN brands b ON p.brand_id = b.id /*and b.category_id = s.category_id*/
+INNER JOIN categories c ON s.category_id = c.id
+WHERE p.id = 1"; // join category with subcategory through
+
+"SELECT FLOOR(3.99 + 0.5) AS rounded_value"; // floor function
+"SELECT CEILING(3.99 + 0.5) AS rounded_value"; // ceiling function
+
+"SELECT SUM(`product_quantity`) FROM products GROUP BY `subcategory_id`"; // sum with group by function
+"SELECT COUNT(`product_quantity`) FROM products GROUP BY `subcategory_id`"; // count with group by function
+
+"SELECT  SUM(`total_price`)
+FROM orders
+WHERE `created_at` BETWEEN start_date AND end_date
+GROUP BY `user_id`"; // sum with date between and group by function
+
+"SELECT `subcategory_id`, SUM(`product_quantity`), COUNT(DISTINCT `product_quantity`) FROM products GROUP BY `subcategory_id`
+LIMIT 25"; // distinct function duplicates value not counting
+
+"SELECT COUNT(DISTINCT `product_quantity`) FROM products"; // distinct function not count duplicate data
+
+"SELECT
+SUM(IF(o.country = 'USA',0,1)),
+SUM(IF(o.country = 'USA',1,0))
+FROM employees e
+join offices o on o.code = e.office_code"; // send mail use condition mysql
+
+"SELECT
+c.seles_rep_id,
+CONCAT(e.fname , ' ', e.lname) AS selse_person
+COUNT(DISTINCT o.id) AS toal_order
+SUM(IF(c.country = 'USA', 100, 300)) as total_shipment_cost
+FROM orders o
+JOIN customers c ON c.id = o.customer_id
+JOIN employees e ON e.id = c.seles_rep_id
+GROUP BY c.seles_rep_id"; // group_by complex
+
+"SELECT GROUP_CONCAT(`brand_id`) FROM products"; // group_concat function
+
+"SELECT customer_id, GROUP_CONCAT(id), SUM(amount) AS total
+FROM
+    payments
+WHERE YEAR(payment_date) = '2004'
+GROUP BY customer_id";
+
+"SELECT subcategory_id, SUM(`product_price`), GROUP_CONCAT(product_price)
+FROM products
+GROUP BY subcategory_id"; // group function complex query
+
+"SELECT subcategory_id, ANY_VALUE( product_name), SUM(`product_price`)
+FROM products
+GROUP BY subcategory_id"; // any_value function with group by
+
+"SELECT customer_id,
+YEAR(payment_date) AS payment_year,
+GROUP_CONCAT(check_number)
+SUM(amount) AS total
+FROM payments
+GROUP BY customer_id, payment_year"; // multiple group by function complex query
