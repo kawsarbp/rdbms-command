@@ -1,4 +1,5 @@
 <?php
+/*You have to check by query little by little. Then the big query has to be completed*/
 
 "CREATE DATABASE databases_name"; // create database
 
@@ -23,7 +24,7 @@
 "SELECT `name`,`quantity` FROM `products`"; // select specific product
 
 "SELECT * FROM `products`"; // select all product
-
+"SELECT * FROM transactions LIMIT 10 OFFSET 20"; // offset
 "SELECT `name`,`quantity` FROM `products` WHERE `quantity` >= 0"; // greater than equal to and less than equal to
 
 "SELECT `name`,`quantity` FROM `products` WHERE `quantity` BETWEEN 10 AND 12"; // between operator
@@ -49,6 +50,12 @@
 "UPDATE `users` SET `name`='ashif' WHERE `id` = 4"; // update data query
 
 "DELETE FROM `users` WHERE `id` = 4"; // delete data query
+
+"SELECT STRAIGHT_JOIN `products`.`name` ,`categories`.`name`,`subcategories`.`name`,`users`.`name` 
+FROM `products` 
+JOIN `categories` ON `products`.`category_id` = `categories`.`id` 
+JOIN `subcategories` ON `products`.`subcategory_id` = `subcategories`.`id` AND `p`.`name` = 'dhaka'
+JOIN `users` ON `products`.`user_id` = `users`.`id`"; // STRAIGHT_JOIN force fully join
 
 "SELECT `products`.`name` ,`categories`.`name`,`subcategories`.`name`,`users`.`name` 
 FROM `products` 
@@ -234,3 +241,75 @@ GROUP_CONCAT(check_number)
 SUM(amount) AS total
 FROM payments
 GROUP BY customer_id, payment_year"; // multiple group by function complex query
+
+"SELECT IFNULL(null, 3000) AS salary"; // ifnull function
+//table structured copy and table data copy command
+
+// we add multiple index in table but when we add multiple indexes then it can slow but.
+// when we need then we have to use poperly dont fear. we popery try to use minimun index.
+// when we doing join then if we have index or primary key then it is very helpful and efficient.
+"SHOW INDEXES FROM transactions"; // check index
+"ALTER TABLE transactions ADD INDEX (status)"; // add index in transactions table because when it use then its very first
+"ALTER TABLE transactions ADD INDEX (status(4))"; //it is partial index. get 4 character when find data.
+"EXPLAIN SELECT * FROM transactions"; // check for index use or not
+"SELECT * FROM transactions"; // query for run time check when add index transactions column
+"DROP INDEX status ON transactions"; // drop / delete index from transactions table
+// nomal index dont impact function thats way we have to create below index
+"ALTER TABLE transactions ADD INDEX joining_year((YEAR(created_at)))"; // functional index
+
+"ALTER TABLE products add COLUMN area INT AS (CAST(SUBSTRING_INDEX(dimension,'x',1) AS DECIMAL) * (CAST(SUBSTRING_INDEX(dimension,'X',-2)AS DECIAML))"; // explode size // vertual column add and implement index
+
+//we can make an index including all relevant columns
+"ALTER TABLE transactions ADD INDEX search_q(gateway,amount)";
+// index impact sentential . and if use range like > < then stop this statement. when not sentential then index not impact.
+"EXPLAIN
+SELECT
+    id, gateway, amount, created_at FROM transactions
+WHERE
+     gateway = 'Cash On Delivery'
+    AND amount > 50"; // query
+
+// full text search with fulltext index, if we need full text search then we have to create full text index
+// can be used with only CHAR,VARCHAR and text columns
+"ALTER TABLE products ADD FULLTEXT INDEX search_product(product_name,product_title)";
+"EXPLAIN
+SELECT * FROM products WHERE MATCH(product_name,product_title) AGAINST('Sports Amd Ryze raphic')"; // order important from index
+
+"SELECT COUNT(DISTINCT subcategory_id) / COUNT(*) FROM products;"; // check efficient index if 1.0000 its best
+
+//check slow query on or off
+"SHOW GLOBAL VARIABLES LIKE 'slow_query_log'";
+"SHOW GLOBAL VARIABLES LIKE 'long_query_time'";
+
+// trun slow query logging on
+"SET GLOBAL slow_query_log = 'ON'";
+
+// keeping slow query log in file
+"SET GLOBAL slow_query_log_file = '/tmp/slow_queries.log'";
+
+// keeping slow query log in table
+"SET GLOBAL log_output = 'table'";
+
+// additional settings
+"SET GLOBAL log_queries_not_using_indexes = 'ON'";
+"SET GLOBAL long_query_time = 1";
+
+// turn off slow query logging
+"SET GLOBAL slow_query_log = 'OFF'"; // we should be off
+
+// show query run time first
+"SET SESSION profiling = 1";
+"SHOW PROFILES";
+"SHOW PROFILE FOR QUERY 13(Query_ID)";
+"SET SESSION profiling = 0"; // we should be off 
+
+"SELECT `id`,`product_name` , brands.brand_name FROM `products` INNER JOIN `brands` USING(`id`) LIMIT 0, 25"; // useing functions use for join INNER JOIN brands USEING(`brand_id`)
+
+// use index properly first
+// 1.where condition #order important
+// 2.group by condition
+// 3.order by condition
+// 4.join by condition #joinable columns
+// #when dashboard is slow then we create and store calculate value  anouther table for dashboard
+
+
