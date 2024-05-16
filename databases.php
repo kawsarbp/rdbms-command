@@ -7,7 +7,7 @@
 
 "DROP DATABASE databases_name"; // drop database
 
-"DESCRIBE table_name"; // describe table
+"DESCRIBE table_name"; // describe table check query
 
 "SHOW CREATE TABLE `products`"; // table creation process
 
@@ -243,17 +243,27 @@ FROM payments
 GROUP BY customer_id, payment_year"; // multiple group by function complex query
 
 "SELECT IFNULL(null, 3000) AS salary"; // ifnull function
-//table structured copy and table data copy command
+
+"CREATE TABLE bangla_cities LIKE city;";//table structured copy and table data copy command
+
+"INSERT INTO bangla_cities 
+SELECT * FROM city WHERE country_id = '12'"; // copy data from city table
 
 // we add multiple index in table but when we add multiple indexes then it can slow but.
 // when we need then we have to use poperly dont fear. we popery try to use minimun index.
 // when we doing join then if we have index or primary key then it is very helpful and efficient.
 "SHOW INDEXES FROM transactions"; // check index
+
 "ALTER TABLE transactions ADD INDEX (status)"; // add index in transactions table because when it use then its very first
+
 "ALTER TABLE transactions ADD INDEX (status(4))"; //it is partial index. get 4 character when find data.
+
 "EXPLAIN SELECT * FROM transactions"; // check for index use or not
+
 "SELECT * FROM transactions"; // query for run time check when add index transactions column
+
 "DROP INDEX status ON transactions"; // drop / delete index from transactions table
+
 // nomal index dont impact function thats way we have to create below index
 "ALTER TABLE transactions ADD INDEX joining_year((YEAR(created_at)))"; // functional index
 
@@ -261,6 +271,7 @@ GROUP BY customer_id, payment_year"; // multiple group by function complex query
 
 //we can make an index including all relevant columns
 "ALTER TABLE transactions ADD INDEX search_q(gateway,amount)";
+
 // index impact sentential . and if use range like > < then stop this statement. when not sentential then index not impact.
 "EXPLAIN
 SELECT
@@ -351,3 +362,113 @@ JOIN film_category ON film_category.category_id = category.category_id
 JOIN film ON film_category.film_id = film.film_id 
 GROUP BY category_id;"; // alternative query
 
+// create view and manipulate. update/delete/insert. view just a query not data. but we define of view is 61! tables
+"CREATE VIEW yet_to_return AS
+SELECT customer.customer_id, CONCAT(customer.first_name, ' ' ,customer.last_name) fullname, customer.email, rental.rental_date, film.title,film.replacement_cost
+FROM customer
+JOIN rental ON rental.customer_id = customer.customer_id
+JOIN inventory ON inventory.inventory_id = rental.inventory_id
+JOIN film ON inventory.film_id = film.film_id
+WHERE rental.return_date IS NULL"; // create view
+
+"SHOW CREATE VIEW yet_to_return"; // view query check
+"DROP VIEW IF EXISTS yet_to_return"; // drop view
+"CHECK TABLE yet_to_return"; // check table query
+
+"SELECT * FROM yet_to_return WHERE customer_id = 42"; // select view table
+
+"SELECT yet_to_return.customer_id, yet_to_return.email, address.phone, address.postal_code
+FROM yet_to_return
+JOIN customer USING(customer_id)
+JOIN address ON address.address_id = customer.address_id
+WHERE customer_id = 42"; // join with view table and we also join view and view
+
+"CREATE VIEW bd_cities AS
+SELECT city_id, city, country_id FROM sakila.city
+WHERE country_id = '12'
+WITH CHECK OPTION;"; // create view with check option
+// manipulate data
+"SELECT * FROM bd_cities";
+"INSERT INTO bd_cities (city, country_id) VALUES('kumilla',12)";
+"INSERT INTO bd_cities (city, country_id) VALUES('kabul',1)";
+
+"CREATE TABLE mt_yet_to_return
+SELECT * FROM yet_to_return;"; // copy table structured and data form view
+
+/*materialize view*/
+"TRUNCATE TABLE mt_yet_to_return;"; // drop table data, truncate table
+"CREATE TABLE mt_yet_to_return
+SELECT * FROM yet_to_return;
+ 
+
+DELIMITER //
+
+CREATE PROCEDURE RefreshYetToReturn()
+BEGIN
+	CREATE TABLE IF NOT EXISTS mt_yet_to_return SELECT * FROM yet_to_return;
+	TRUNCATE TABLE mt_yet_to_return;
+	INSERT INTO mt_yet_to_return SELECT * FROM yet_to_return;
+END //
+
+DELIMITER;
+
+CALL RefreshYetToReturn()"; // make materialize view table from view and refresh/update table from view
+
+// store procedure, real time update
+"CREATE TABLE mt_yet_to_return
+SELECT * FROM yet_to_return;
+
+DELIMITER //
+
+CREATE PROCEDURE RefreshYetToReturn()
+BEGIN
+	CREATE TABLE IF NOT EXISTS mt_yet_to_return SELECT * FROM yet_to_return;
+	TRUNCATE TABLE mt_yet_to_return;
+	INSERT INTO mt_yet_to_return SELECT * FROM yet_to_return;
+END //
+
+DELIMITER;
+
+CALL RefreshYetToReturn();
+
+CREATE EVENT IF NOT EXISTS 1_min_yet_to_return
+ON SCHEDULE EVERY 1 MINUTE
+DO
+	CALL RefreshYetToReturn()"; // real time data update
+#union and union all
+
+/*full text search*/ // only support in innodb and mysql. its CHAR,VARCHAR and TEXT supported. meilisearch.
+"ALTER TABLE film ADD FULLTEXT INDEX ft_search_film (title,description);
+SHOW INDEX FROM film;"; // add index in film table for search
+// use EXPLAIN for check index add or not
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('war ice divorce' IN NATURAL LANGUAGE MODE)
+AND rating = 'g'"; // search query IN NATURAL LANGUAGE MODE
+
+"SELECT title, MATCH(title,description) AGAINST ('war ice') AS score
+FROM film
+ORDER BY score DESC"; // how much keyword matches this score check
+
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('+war -ice' IN BOOLEAN MODE)"; // (-) sin means are not allowed this ice keyword related rows.
+                                                                        // (+) sin means this keyword must have this row
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('+war >NOTTING' IN BOOLEAN MODE)"; // (>) sin means major priority this keyword related rows.
+
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('read comment' IN BOOLEAN MODE);"; // ("ROCKY WAR") "" sin means only find this text.
+
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('war*' IN BOOLEAN MODE)"; // (*) sin means match incomplete word.
+
+// WITH QUERY EXPRESSION mode
+"SELECT film_id, title, description, release_year, length, rating
+FROM film
+WHERE MATCH(title, description) AGAINST ('Shark Tank' WITH QUERY EXPANSION);"; // get similar data set use this query expression.
+
+"SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;"; //stop words
