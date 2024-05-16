@@ -298,12 +298,16 @@ SELECT * FROM products WHERE MATCH(product_name,product_title) AGAINST('Sports A
 "SET GLOBAL slow_query_log = 'OFF'"; // we should be off
 
 // show query run time first
-"SET SESSION profiling = 1";
+"SET SESSION profiling = 1"; // single query run time check first, speed
 "SHOW PROFILES";
 "SHOW PROFILE FOR QUERY 13(Query_ID)";
-"SET SESSION profiling = 0"; // we should be off 
+"SET SESSION profiling = 0"; // we should be off
 
-"SELECT `id`,`product_name` , brands.brand_name FROM `products` INNER JOIN `brands` USING(`id`) LIMIT 0, 25"; // useing functions use for join INNER JOIN brands USEING(`brand_id`)
+"SHOW STATUS LIKE 'last_query_cost'"; // speed test
+
+"SELECT products.product_name
+FROM products
+INNER JOIN blogs USING(user_id)"; // useing functions use for join INNER JOIN brands USEING(`brand_id`)
 
 // use index properly first
 // 1.where condition #order important
@@ -312,4 +316,38 @@ SELECT * FROM products WHERE MATCH(product_name,product_title) AGAINST('Sports A
 // 4.join by condition #joinable columns
 // #when dashboard is slow then we create and store calculate value  anouther table for dashboard
 
+// sub query #subquery faster then join but recommended option is join. and it will handel efficient such as use index etc.
+"SELECT gateway 
+FROM transactions
+WHERE user_id IN (SELECT id FROM users WHERE YEAR(created_at) = 2023)"; // this have multiple queries
+
+"SELECT first_name, last_name,
+(SELECT COUNT(*)  FROM film_actor WHERE actor_id = actor.actor_id) flims
+FROM actor"; // sub query
+
+"SELECT COUNT(DISTINCT customer_id) FROM rental WHERE return_date IS NULL";
+"SELECT customer_id, first_name, last_name, email
+FROM customer
+WHERE  EXISTS (SELECT * FROM rental WHERE rental.customer_id = customer.customer_id AND return_date IS NULL)"; // sub query with exist
+
+"SELECT customer.customer_id, customer.first_name, customer.last_name, customer.email
+FROM customer
+JOIN rental ON customer.customer_id = rental.customer_id
+WHERE rental.return_date IS NULL
+GROUP BY customer_id"; // sub query alternative
+
+"SELECT customer_id, first_name, last_name, email
+FROM customer
+WHERE NOT EXISTS (SELECT * FROM rental WHERE rental.customer_id = customer.customer_id AND return_date IS NULL)"; // not exist
+
+"SELECT category_id, name, (
+SELECT AVG(replacement_cost) FROM film WHERE film_id IN(
+SELECT film_id FROM film_category WHERE film_category.category_id = category.category_id)
+) as avg_coast FROM category"; // multiple subquery nested queries
+
+"SELECT category.category_id, category.name, AVG(film.replacement_cost)
+FROM category
+JOIN film_category ON film_category.category_id = category.category_id
+JOIN film ON film_category.film_id = film.film_id 
+GROUP BY category_id;"; // alternative query
 
