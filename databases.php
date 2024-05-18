@@ -472,3 +472,101 @@ FROM film
 WHERE MATCH(title, description) AGAINST ('Shark Tank' WITH QUERY EXPANSION);"; // get similar data set use this query expression.
 
 "SELECT * FROM INFORMATION_SCHEMA.INNODB_FT_DEFAULT_STOPWORD;"; //stop words
+
+/*stored procedure*/
+"DELIMITER //
+
+CREATE PROCEDURE return_yet_to()
+
+BEGIN
+
+SELECT yet_to_return.customer_id, yet_to_return.email, address.phone, address.postal_code
+FROM yet_to_return
+JOIN customer USING(customer_id)
+JOIN address ON address.address_id = customer.address_id;
+
+END //
+
+DELIMITER ;
+
+CALL return_yet_to()"; // store procedure structure
+
+/*store value in  variable*/
+"SELECT 100 INTO @total_count;
+SELECT @total_count;";
+/*store value in set variable*/
+"SET @abc = 60;
+SELECT @abc;";
+
+/*store procedure with in parameter*/
+"DELIMITER //
+CREATE PROCEDURE get_movie_by_rating(IN rating_type VARCHAR(50))
+BEGIN
+	SELECT title, description, release_year, rating
+	FROM film WHERE rating = rating_type;
+	END //
+DELIMITER ; 
+
+CALL get_movie_by_rating('PG')";
+
+// in out parameter in store procedure
+"DELIMITER //
+CREATE PROCEDURE get_movie_by_ratings(
+IN rating_type VARCHAR(50),
+OUT total_count INT UNSIGNED
+)
+BEGIN
+	SELECT COUNT(*) INTO total_count
+	FROM film WHERE rating = rating_type;
+	END // 
+DELIMITER ; 
+
+CALL get_movie_by_ratings('PG', @total);
+
+SELECT @total;";
+
+// out parameter in store procedure
+"DELIMITER //
+CREATE PROCEDURE get_movie_by_returns(OUT total_count INT UNSIGNED)
+BEGIN
+	SELECT COUNT(*)
+	FROM film WHERE rating = 'PG';
+	END // 
+DELIMITER ; 
+
+CALL get_movie_by_returns(@total);
+
+SELECT @total;";
+
+
+// inout parameter in store procedure
+"DELIMITER //
+CREATE PROCEDURE count_and_add_by_rating(
+IN rating_type VARCHAR(50),
+INOUT collected_total INT UNSIGNED
+)
+BEGIN
+	DECLARE current_total INT DEFAULT 0;
+	
+	SELECT COUNT(*) INTO current_count
+	FROM film WHERE rating = rating_type;
+	
+	SET collected_total = current_count+current_total;
+	END // 
+DELIMITER ; 
+
+SET @last_total = 0;
+CALL get_movie_by_ratings('PG', @last_total);
+CALL get_movie_by_ratings('G', @last_total);
+
+SELECT @last_total;";
+
+/*managing stored  procedures*/
+"SELECT routine_name, routine_type, definer, created
+FROM information_schema.routines
+WHERE routine_type = 'PROCEDURE' AND ROUTINE_SCHEMA = 'sakila'";// check how much stored procedures have
+
+"DROP PROCEDURE IF EXISTS get_movie_by_rating;"; // delete store procedures
+
+"SHOW CREATE PROCEDURE get_movie_by_rating"; // getting procedures details
+
