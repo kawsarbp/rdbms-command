@@ -558,7 +558,6 @@ DELIMITER ;
 SET @last_total = 0;
 CALL get_movie_by_ratings('PG', @last_total);
 CALL get_movie_by_ratings('G', @last_total);
-
 SELECT @last_total;";
 
 /*managing stored  procedures*/
@@ -567,6 +566,64 @@ FROM information_schema.routines
 WHERE routine_type = 'PROCEDURE' AND ROUTINE_SCHEMA = 'sakila'";// check how much stored procedures have
 
 "DROP PROCEDURE IF EXISTS get_movie_by_rating;"; // delete store procedures
-
 "SHOW CREATE PROCEDURE get_movie_by_rating"; // getting procedures details
 
+/*trigger*/ // we can use when update, insert and delete. aso use after and before.  new,old.
+"INSERT  INTO orders (customer_id,date,total_amount)
+VALUES (1,NOW(),550);
+
+INSERT INTO order_items (order_id,product_id,quantity,price)
+VALUES (3,1,2,545.91),(3,2,5,675.91);
+
+CREATE TRIGGER update_stock_on_order AFTER INSERT ON order_items
+	FOR EACH ROW
+		UPDATE products
+		SET stock_quantity  =  stock_quantity - new.quantity
+		WHERE id = new.product_id;
+		
+DROP TRIGGER update_stock_on_order"; // add trigger and update quantity.
+
+//createing change log
+"CREATE TABLE name_changes(
+	cusomer_id BIGINT,
+	old_name VARCHAR (200),
+	new_name VARCHAR (200),
+	change_time TIMESTAMP DEFAULT(CURRENT_TIMESTAMP())
+);
+
+UPDATE customers SET name = 'kawsar ahmed ashif' WHERE id = 1;
+
+CREATE TRIGGER name_change_hostory AFTER UPDATE ON customers
+	FOR EACH ROW
+	INSERT INTO name_changes (cusomer_id,old_name,new_name)
+	VALUE (new.id, old.name, new.name);
+	
+DROP TRIGGER name_change_hostory"; // trigger with update and new,old keywords used
+
+// data senitize with trigger
+"DELIMITER //
+CREATE TRIGGER hashed_cust_password BEFORE INSERT ON customers
+	FOR EACH ROW
+	BEGIN
+		IF (LENGTH(new.password) < 32)
+		THEN
+			SET new.password  = MD5(new.password);
+		END IF;
+	END //
+DELIMITER; "; // before INSERT ON customers
+
+// preventing execution with trigger
+"CREATE TRIGGER prevent_banned_user_order BEFORE INSERT ON orders
+FOR EACH ROW
+BEGIN
+    DECLARE banned_count INT;
+    SELECT COUNT(*) INTO banned_count 
+    FROM customers 
+    WHERE id = NEW.customer_id AND is_bannd = 1;
+
+    IF banned_count > 0 THEN
+        SIGNAL SQLSTATE '45000' SET MESSAGE_TEXT = 'cannot accept order from banned customer';
+    END IF;
+END //
+
+DELIMITER;"; // bannd user not created order. before keyword
